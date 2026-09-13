@@ -50,7 +50,7 @@ month,revenue,cost
 2026-01,125000.00,78250.00
 ```
 
-The CLI returns exit code `2` and prints a useful error message when the CSV has missing columns, blank months, invalid numeric values, negative amounts, or no data rows.
+The CLI returns exit code `2` and prints a useful error message when the CSV has missing columns, blank months, invalid numeric values, negative amounts, or no data rows. Report titles must be single-line plain text: HTML and Markdown formatting syntax are rejected so the title cannot alter the report structure.
 
 ## Development
 

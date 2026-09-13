@@ -91,3 +91,31 @@ def test_cli_rejects_output_path_that_is_a_directory(tmp_path: Path, capsys) -> 
 
     assert exit_code == 2
     assert capsys.readouterr().err == "error: unable to write output\n"
+
+
+def test_cli_rejects_html_in_title(tmp_path: Path, capsys) -> None:
+    source = tmp_path / "input.csv"
+    output = tmp_path / "report.md"
+    source.write_text("month,revenue,cost\n2026-01,100,50\n", encoding="utf-8")
+
+    exit_code = main(
+        ["--input", str(source), "--output", str(output), "--title", '<img src=x onerror="alert(1)">']
+    )
+
+    assert exit_code == 2
+    assert capsys.readouterr().err == "error: title contains Markdown or HTML syntax\n"
+    assert not output.exists()
+
+
+def test_cli_rejects_markdown_syntax_in_title(tmp_path: Path, capsys) -> None:
+    source = tmp_path / "input.csv"
+    output = tmp_path / "report.md"
+    source.write_text("month,revenue,cost\n2026-01,100,50\n", encoding="utf-8")
+
+    exit_code = main(
+        ["--input", str(source), "--output", str(output), "--title", "**Quarterly** KPI Snapshot"]
+    )
+
+    assert exit_code == 2
+    assert capsys.readouterr().err == "error: title contains Markdown or HTML syntax\n"
+    assert not output.exists()
