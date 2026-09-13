@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import sys
+import unicodedata
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -61,8 +62,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--title", default="KPI Report", help="Report title")
     args = parser.parse_args(argv)
 
+    if any(unicodedata.category(character) == "Cc" for character in args.title):
+        print("error: title must not contain control characters", file=sys.stderr)
+        return 2
+
     try:
         records = load_records(args.input)
+    except UnicodeDecodeError:
+        print("error: invalid UTF-8 input", file=sys.stderr)
+        return 2
     except (OSError, ValidationError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
@@ -86,8 +94,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             "",
         ]
     )
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(report, encoding="utf-8")
+    try:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(report, encoding="utf-8")
+    except OSError:
+        print("error: unable to write output", file=sys.stderr)
+        return 2
     return 0
 
 
