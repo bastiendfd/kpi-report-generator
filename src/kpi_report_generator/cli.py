@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Sequence
 
 REQUIRED_COLUMNS = ("month", "revenue", "cost")
+MARKUP_SENSITIVE_TITLE_CHARACTERS = frozenset("<>[]()!*_`~\\")
 
 
 class ValidationError(ValueError):
@@ -55,6 +56,14 @@ def parse_amount(value: str | None, name: str, row_number: int) -> Decimal:
     return amount
 
 
+def validate_title(title: str) -> None:
+    """Require a single-line plain-text title so it cannot inject Markdown or HTML."""
+    if chr(13) in title or chr(10) in title or any(
+        character in MARKUP_SENSITIVE_TITLE_CHARACTERS for character in title
+    ):
+        raise ValidationError("title contains Markdown or HTML syntax")
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate a Markdown KPI report from a CSV file.")
     parser.add_argument("--input", required=True, type=Path, help="CSV input file")
@@ -67,6 +76,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     try:
+        validate_title(args.title)
         records = load_records(args.input)
     except UnicodeDecodeError:
         print("error: invalid UTF-8 input", file=sys.stderr)
